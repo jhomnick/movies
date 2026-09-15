@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Nights — the list</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #17112a;
+    --surface: #211a38;
+    --surface-2: #2a2246;
+    --line: rgba(244,238,229,0.10);
+    --line-strong: rgba(244,238,229,0.18);
+    --gold: #e5b85a;
+    --gold-soft: rgba(229,184,90,0.16);
+    --cream: #f4eee5;
+    --muted: #a99fc4;
+    --watched: #5fae9d;
+    --watched-soft: rgba(95,174,157,0.14);
+    --warn: #e0857a;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--cream);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:3rem;
+  }
+  .wrap{ max-width:720px; margin:0 auto; padding:1.5rem 1.1rem 0; }
+
+  /* ---- sign-in screen ---- */
+  #signinScreen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:1.5rem;
+  }
+  .signin-card{
+    max-width:360px;
+    text-align:center;
+  }
+  .signin-card h1{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:2rem;
+    margin:0 0 0.6rem;
+  }
+  .signin-card p{
+    color:var(--muted);
+    font-size:0.92rem;
+    line-height:1.5;
+    margin:0 0 1.6rem;
+  }
+  .google-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:0.6rem;
+    background:var(--cream);
+    color:#17112a;
+    border:none;
+    border-radius:8px;
+    padding:0.7rem 1.3rem;
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    cursor:pointer;
+  }
+  #signinStatus{ margin-top:1rem; font-size:0.82rem; color:var(--muted); min-height:1.2em; }
+
+  #appScreen{ display:none; }
+  .account-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:0.78rem;
+    color:var(--muted);
+    padding:0.6rem 1.1rem 0;
+    max-width:720px;
+    margin:0 auto;
+  }
+  .account-row button{
+    background:none;
+    border:1px solid var(--line-strong);
+    color:var(--muted);
+    border-radius:6px;
+    padding:0.25rem 0.6rem;
+    font-size:0.75rem;
+    cursor:pointer;
+  }
+
+  header.hero{ margin-bottom:1.4rem; }
+  .hero h1{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:2rem;
+    line-height:1.1;
+    margin:0 0 0.5rem;
+    letter-spacing:0.2px;
+  }
+  .hero p{
+    margin:0;
+    color:var(--muted);
+    font-size:0.93rem;
+    line-height:1.5;
+    max-width:52ch;
+  }
+  .stat-row{
+    display:flex;
+    align-items:baseline;
+    gap:0.5rem;
+    margin-top:1rem;
+    padding-top:1rem;
+    border-top:1px solid var(--line);
+  }
+  .stat-row .num{ font-family:'Fraunces', serif; font-size:1.5rem; color:var(--gold); }
+  .stat-row .label{ font-size:0.85rem; color:var(--muted); }
+  .bar-track{
+    flex:1;
+    height:4px;
+    background:var(--line);
+    border-radius:2px;
+    overflow:hidden;
+    margin-left:0.4rem;
+  }
+  .bar-fill{ height:100%; background:var(--gold); border-radius:2px; transition:width 0.3s ease; }
+
+  .controls{
+    display:flex;
+    flex-direction:column;
+    gap:0.7rem;
+    margin-bottom:1.3rem;
+  }
+  .search-row{ display:flex; gap:0.5rem; }
+  input[type="search"]{
+    flex:1;
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--cream);
+    font-family:'Work Sans', sans-serif;
+    font-size:0.92rem;
+    padding:0.55rem 0.75rem;
+    border-radius:8px;
+    outline:none;
+  }
+  input[type="search"]::placeholder{ color:var(--muted); }
+  input[type="search"]:focus{ border-color:var(--gold); }
+
+  select{
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--cream);
+    font-family:'Work Sans', sans-serif;
+    font-size:0.85rem;
+    padding:0.5rem 0.6rem;
+    border-radius:8px;
+    outline:none;
+  }
+  .row-2{ display:flex; gap:0.5rem; }
+  .row-2 select{ flex:1; }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:0.4rem; }
+  .chip{
+    font-size:0.78rem;
+    padding:0.36rem 0.7rem;
+    border-radius:999px;
+    border:1px solid var(--line-strong);
+    background:transparent;
+    color:var(--muted);
+    cursor:pointer;
+    user-select:none;
+    transition:background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .chip.active{
+    background:var(--gold-soft);
+    border-color:var(--gold);
+    color:var(--gold);
+  }
+  .toggle-row{ display:flex; align-items:center; justify-content:space-between; gap:0.6rem; }
+  .toggle-row .txt{ font-size:0.83rem; color:var(--muted); }
+  .switch{
+    position:relative;
+    width:38px; height:22px;
+    background:var(--surface-2);
+    border:1px solid var(--line-strong);
+    border-radius:999px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .switch .knob{
+    position:absolute; top:2px; left:2px;
+    width:16px; height:16px;
+    background:var(--muted);
+    border-radius:50%;
+    transition:transform 0.15s ease, background 0.15s ease;
+  }
+  .switch.on{ border-color:var(--gold); }
+  .switch.on .knob{ transform:translateX(16px); background:var(--gold); }
+
+  .add-box{
+    background:var(--surface);
+    border:1px dashed var(--line-strong);
+    border-radius:10px;
+    padding:0.9rem 0.9rem 0.8rem;
+    margin-bottom:1.3rem;
+  }
+  .add-box .add-label{
+    display:block;
+    font-size:0.8rem;
+    color:var(--muted);
+    margin-bottom:0.5rem;
+  }
+  .add-row{ display:flex; gap:0.5rem; }
+  .add-row input[type="text"]{
+    flex:1;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--cream);
+    font-family:'Work Sans', sans-serif;
+    font-size:0.92rem;
+    padding:0.55rem 0.75rem;
+    border-radius:8px;
+    outline:none;
+  }
+  .add-row input[type="text"]::placeholder{ color:var(--muted); }
+  .add-row input[type="text"]:focus{ border-color:var(--gold); }
+  .add-row button{
+    flex-shrink:0;
+    background:var(--gold-soft);
+    border:1px solid var(--gold);
+    color:var(--gold);
+    font-family:'Work Sans', sans-serif;
+    font-weight:500;
+    font-size:0.88rem;
+    padding:0 1rem;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .add-row button:disabled{ opacity:0.5; cursor:default; }
+  .add-status{
+    font-size:0.78rem;
+    color:var(--muted);
+    margin-top:0.45rem;
+    min-height:1.1em;
+  }
+
+  .genre-group{ margin-bottom:1.6rem; }
+  .genre-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:0.6rem;
+    padding-bottom:0.5rem;
+    margin-bottom:0.6rem;
+    border-bottom:1px solid var(--line-strong);
+  }
+  .genre-head h2{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:1.15rem;
+    margin:0;
+    color:var(--gold);
+  }
+  .genre-head .count{ font-size:0.78rem; color:var(--muted); white-space:nowrap; }
+
+  .movie{
+    display:flex;
+    gap:0.75rem;
+    padding:0.7rem 0;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+  }
+  .movie:last-child{ border-bottom:none; }
+  .movie .stub{
+    flex-shrink:0;
+    width:26px; height:26px;
+    border-radius:50%;
+    border:1.5px solid var(--line-strong);
+    display:flex; align-items:center; justify-content:center;
+    margin-top:0.15rem;
+    transition:border-color 0.15s, background 0.15s;
+  }
+  .movie .stub svg{ width:13px; height:13px; opacity:0; transition:opacity 0.15s; }
+  .movie.watched .stub{ background:var(--watched); border-color:var(--watched); }
+  .movie.watched .stub svg{ opacity:1; }
+  .movie .body{ flex:1; min-width:0; }
+  .movie .top-line{ display:flex; align-items:baseline; gap:0.45rem; flex-wrap:wrap; }
+  .movie .title{ font-weight:500; font-size:0.98rem; }
+  .movie .year{ font-size:0.82rem; color:var(--muted); }
+  .movie.watched .title, .movie.watched .year{ text-decoration:line-through; text-decoration-color:var(--muted); opacity:0.55; }
+  .movie .blurb{ font-size:0.85rem; color:var(--muted); margin-top:0.2rem; line-height:1.4; }
+  .movie.watched .blurb{ opacity:0.45; }
+  .movie .meta-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; flex-wrap:wrap; }
+  .badge{
+    font-size:0.72rem;
+    padding:0.18rem 0.5rem;
+    border-radius:6px;
+    background:var(--surface-2);
+    color:var(--cream);
+    border:1px solid var(--line);
+  }
+  .badge.stream{ color:var(--gold); border-color:rgba(229,184,90,0.35); text-decoration:none; cursor:pointer; }
+  .badge.stream:hover{ border-color:var(--gold); }
+  .badge.custom{ color:var(--watched); border-color:rgba(95,174,157,0.35); }
+
+  .empty{
+    text-align:center;
+    padding:2.5rem 1rem;
+    color:var(--muted);
+    font-size:0.9rem;
+  }
+
+  footer{
+    max-width:720px;
+    margin:1.2rem auto 0;
+    padding:1rem 1.1rem 0;
+    border-top:1px solid var(--line);
+    font-size:0.78rem;
+    color:var(--muted);
+    line-height:1.6;
+  }
+  footer a{ color:var(--gold); text-decoration:none; }
+</style>
+</head>
+<body>
+
+<div id="signinScreen">
+  <div class="signin-card">
+    <h1>Movie nights</h1>
+    <p>Your family's watch list — synced across every device you sign into.</p>
+    <button class="google-btn" id="googleSignIn">Sign in with Google</button>
+    <div id="signinStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div class="account-row">
+    <span id="accountLabel"></span>
+    <button id="signOutBtn">Sign out</button>
+  </div>
+  <div class="wrap">
+    <header class="hero">
+      <h1>Movie nights</h1>
+      <p>A running list of great movies for thirteen-year-olds and their parents to watch together. Tap a title to mark it watched, filter by mood, and sort however you like.</p>
+      <div class="stat-row">
+        <span class="num" id="watchedCount">0</span>
+        <span class="label">of <span id="totalCount">0</span> watched</span>
+        <div class="bar-track"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+      </div>
+    </header>
+
+    <div class="add-box">
+      <label class="add-label" for="addInput">Add a movie or a favorite actor — we'll search TMDB and add all their movies</label>
+      <div class="add-row">
+        <input type="text" id="addInput" placeholder="e.g. Coco, or Tom Hanks">
+        <button id="addBtn">Add</button>
+      </div>
+      <div class="add-status" id="addStatus"></div>
+    </div>
+
+    <div class="controls">
+      <div class="search-row">
+        <input type="search" id="search" placeholder="Search a title…">
+      </div>
+      <div class="row-2">
+        <select id="sortSelect">
+          <option value="default">Sort: our order</option>
+          <option value="title">Sort: title A–Z</option>
+          <option value="year-old">Sort: oldest first</option>
+          <option value="year-new">Sort: newest first</option>
+        </select>
+        <select id="watchedSelect">
+          <option value="all">Show: everything</option>
+          <option value="unwatched">Show: not yet watched</option>
+          <option value="watched">Show: already watched</option>
+        </select>
+      </div>
+      <div class="chips" id="genreChips"></div>
+      <div class="toggle-row">
+        <span class="txt">Group rows by genre</span>
+        <div class="switch on" id="groupToggle"><div class="knob"></div></div>
+      </div>
+    </div>
+
+    <div id="list"></div>
+    <div class="empty" id="emptyState" style="display:none;">Nothing matches those filters. Try clearing a genre or the search box.</div>
+  </div>
+
+  <footer>
+    Streaming homes come from TMDB / JustWatch data and shift often as licensing deals change — double-check before movie night. Your checked-off progress and additions sync automatically to your account across every device you sign into.
+  </footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDsqxpRD8V-sAqmfH13zMGemSVoftalBNc",
+  authDomain: "movienight-9fbc2.firebaseapp.com",
+  projectId: "movienight-9fbc2",
+  storageBucket: "movienight-9fbc2.firebasestorage.app",
+  messagingSenderId: "834985248719",
+  appId: "1:834985248719:web:6f3f4794ea469e37d974ba",
+  measurementId: "G-FFGMR776E8"
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+const provider = new GoogleAuthProvider();
+
+const TMDB_KEY = "43f31068f337f050e0a44993b616c266";
+const TMDB_BASE = "https://api.themoviedb.org/3";
+
+const MOVIES = [
+  {t:"Toy Story", y:1995, g:["Animation"], b:"A cowboy doll's jealousy of a new spaceman toy kicks off Pixar's first feature.", s:"Disney+"},
+  {t:"The Incredibles", y:2004, g:["Animation","Action & adventure"], b:"A family of retired superheroes is pulled back into the fight.", s:"Disney+"},
+  {t:"Ratatouille", y:2007, g:["Animation","Comedy"], b:"A rat with a gift for cooking sneaks into a Paris kitchen.", s:"Disney+"},
+  {t:"Up", y:2009, g:["Animation","Drama"], b:"A widower ties balloons to his house and flies to South America.", s:"Disney+"},
+  {t:"Coco", y:2017, g:["Animation","Musical"], b:"A boy crosses into the Land of the Dead on Día de los Muertos.", s:"Disney+"},
+  {t:"Inside Out", y:2015, g:["Animation","Comedy"], b:"Five emotions steer an 11-year-old through a big move and bigger feelings.", s:"Disney+"},
+  {t:"Zootopia", y:2016, g:["Animation","Mystery & thriller"], b:"A rookie rabbit cop and a fox con artist crack a missing-mammals case.", s:"Disney+"},
+  {t:"How to Train Your Dragon", y:2010, g:["Animation","Action & adventure"], b:"A Viking teen befriends the dragon he was raised to slay.", s:"Peacock"},
+  {t:"Kung Fu Panda", y:2008, g:["Animation","Comedy"], b:"An out-of-shape panda is chosen as a kung fu master, to everyone's disbelief.", s:"Peacock"},
+  {t:"The Lego Movie", y:2014, g:["Animation","Comedy"], b:"An ordinary construction figure is mistaken for the key to saving the universe.", s:"Max"},
+  {t:"Shrek", y:2001, g:["Animation","Comedy"], b:"A grumpy ogre and a talking donkey set off to rescue a princess.", s:"Peacock"},
+  {t:"Spider-Man: Into the Spider-Verse", y:2018, g:["Animation","Action & adventure"], b:"Miles Morales meets Spider-people from other dimensions.", s:"Netflix"},
+  {t:"The Iron Giant", y:1999, g:["Animation","Sci-fi & fantasy"], b:"A boy hides a giant robot from the government during the Cold War.", s:"Max"},
+  {t:"Coraline", y:2009, g:["Mystery & thriller","Animation"], b:"A girl finds a door to a flattering, and increasingly sinister, other world.", s:"Netflix"},
+
+  {t:"Home Alone", y:1990, g:["Comedy"], b:"An eight-year-old defends his house against two bumbling burglars.", s:"Disney+"},
+  {t:"Ferris Bueller's Day Off", y:1986, g:["Comedy"], b:"A high schooler talks his way through one perfect day of skipping class.", s:"Paramount+"},
+  {t:"School of Rock", y:2003, g:["Comedy"], b:"A wannabe rocker poses as a substitute teacher and forms a band with his class.", s:"Paramount+"},
+  {t:"Mean Girls", y:2004, g:["Comedy"], b:"A homeschooled teen navigates the brutal social rules of public high school.", s:"Paramount+"},
+  {t:"Napoleon Dynamite", y:2004, g:["Comedy"], b:"An awkward teen helps a friend run for class president in small-town Idaho.", s:"Check JustWatch"},
+  {t:"Elf", y:2003, g:["Comedy"], b:"A human raised as one of Santa's elves goes to New York to find his father.", s:"Max"},
+  {t:"The Sandlot", y:1993, g:["Comedy","Coming of age"], b:"A new kid joins a neighborhood baseball crew for one unforgettable summer.", s:"Disney+"},
+
+  {t:"Jurassic Park", y:1993, g:["Action & adventure","Sci-fi & fantasy"], b:"A theme park of cloned dinosaurs goes very wrong very fast.", s:"Peacock"},
+  {t:"Raiders of the Lost Ark", y:1981, g:["Action & adventure"], b:"Archaeologist Indiana Jones races the Nazis to the Ark of the Covenant.", s:"Paramount+"},
+  {t:"Star Wars: A New Hope", y:1977, g:["Sci-fi & fantasy","Action & adventure"], b:"A farm boy joins a rebellion against a galactic empire.", s:"Disney+"},
+  {t:"National Treasure", y:2004, g:["Action & adventure","Mystery & thriller"], b:"A historian follows a map on the back of the Declaration of Independence.", s:"Disney+"},
+  {t:"Guardians of the Galaxy", y:2014, g:["Action & adventure","Comedy"], b:"A ragtag crew of misfits protects the galaxy, badly, and with a great soundtrack.", s:"Disney+"},
+  {t:"Percy Jackson & the Olympians: The Lightning Thief", y:2010, g:["Action & adventure","Sci-fi & fantasy"], b:"A boy learns he's the son of Poseidon and sets off on a quest.", s:"Check JustWatch"},
+  {t:"The Mummy", y:1999, g:["Action & adventure","Mystery & thriller"], b:"Treasure hunters accidentally wake a cursed ancient priest in Egypt.", s:"Peacock"},
+  {t:"Spy Kids", y:2001, g:["Action & adventure","Comedy"], b:"Two siblings discover their parents are retired secret agents.", s:"Check JustWatch"},
+
+  {t:"E.T. the Extra-Terrestrial", y:1982, g:["Sci-fi & fantasy","Drama"], b:"A boy hides and befriends a stranded alien in his suburban home.", s:"Peacock"},
+  {t:"Back to the Future", y:1985, g:["Sci-fi & fantasy","Comedy"], b:"A teenager accidentally travels 30 years back in time in a DeLorean.", s:"Peacock"},
+  {t:"The Chronicles of Narnia: The Lion, the Witch and the Wardrobe", y:2005, g:["Sci-fi & fantasy","Action & adventure"], b:"Four siblings step through a wardrobe into a land under an endless winter.", s:"Disney+"},
+  {t:"Harry Potter and the Sorcerer's Stone", y:2001, g:["Sci-fi & fantasy","Coming of age"], b:"An orphan discovers he's a wizard and starts school at Hogwarts.", s:"Peacock"},
+  {t:"The Princess Bride", y:1987, g:["Sci-fi & fantasy","Comedy"], b:"A grandfather reads his sick grandson a tale of true love and revenge.", s:"Disney+"},
+  {t:"Wonder Woman", y:2017, g:["Action & adventure","Sci-fi & fantasy"], b:"An Amazon princess leaves her island to fight in the First World War.", s:"Max"},
+
+  {t:"Wonder", y:2017, g:["Drama","Coming of age"], b:"A boy with a facial difference starts mainstream school for the first time.", s:"Check JustWatch"},
+  {t:"Stand By Me", y:1986, g:["Drama","Coming of age"], b:"Four boys hike through the woods to find a body they've heard about.", s:"Check JustWatch"},
+  {t:"Hidden Figures", y:2016, g:["Drama"], b:"Three Black women mathematicians help launch NASA's first orbital missions.", s:"Disney+"},
+  {t:"Remember the Titans", y:2000, g:["Drama"], b:"A newly integrated football team learns to play, and get along, together.", s:"Disney+"},
+  {t:"Akeelah and the Bee", y:2006, g:["Drama","Coming of age"], b:"An 11-year-old from South LA trains for the National Spelling Bee.", s:"Check JustWatch"},
+  {t:"October Sky", y:1999, g:["Drama","Coming of age"], b:"A coal miner's son builds rockets after watching Sputnik cross the sky.", s:"Check JustWatch"},
+
+  {t:"The Greatest Showman", y:2017, g:["Musical"], b:"A retelling of P.T. Barnum's rise as a circus showman.", s:"Disney+"},
+  {t:"Sing", y:2016, g:["Musical","Animation"], b:"A koala impresario stages a singing contest to save his theater.", s:"Peacock"},
+  {t:"High School Musical", y:2006, g:["Musical","Comedy"], b:"A jock and a brainy new girl both try out for the school musical.", s:"Disney+"},
+  {t:"Encanto", y:2021, g:["Musical","Animation"], b:"Every child in a magical Colombian family gets a gift, except one.", s:"Disney+"},
+
+  {t:"Knives Out", y:2019, g:["Mystery & thriller"], b:"A famous mystery novelist dies, and a detective sorts through his scheming family.", s:"Netflix"},
+  {t:"Holes", y:2003, g:["Mystery & thriller","Coming of age"], b:"A boy sent to a juvenile work camp uncovers a decades-old buried secret.", s:"Disney+"},
+
+  {t:"Finding Nemo", y:2003, g:["Animation"], b:"A clownfish crosses the ocean to rescue his son from a dentist's fish tank.", s:"Disney+"},
+  {t:"Monsters, Inc.", y:2001, g:["Animation","Comedy"], b:"Two monster coworkers discover a little girl has followed them home.", s:"Disney+"},
+  {t:"Wreck-It Ralph", y:2012, g:["Animation","Action & adventure"], b:"An arcade villain jumps between video games looking to become a hero.", s:"Disney+"},
+  {t:"Moana", y:2016, g:["Animation","Musical"], b:"A wayfinder sails beyond the reef to save her island and find a lost demigod.", s:"Disney+"},
+  {t:"Frozen", y:2013, g:["Animation","Musical"], b:"A princess sets out to find her sister, whose icy powers have frozen their kingdom.", s:"Disney+"},
+  {t:"Big Hero 6", y:2014, g:["Animation","Action & adventure"], b:"A boy and his inflatable robot chase down whoever's behind a citywide plot.", s:"Disney+"},
+  {t:"The Lego Batman Movie", y:2017, g:["Animation","Comedy"], b:"Gotham's most self-absorbed hero has to learn to work as part of a family.", s:"Max"},
+  {t:"Spirited Away", y:2001, g:["Animation","Sci-fi & fantasy"], b:"A girl works in a bathhouse for spirits to save her transformed parents.", s:"Max"},
+  {t:"Klaus", y:2019, g:["Animation","Comedy"], b:"A lazy postman and a reclusive toymaker accidentally start a Christmas tradition.", s:"Netflix"},
+  {t:"The Croods", y:2013, g:["Animation","Comedy"], b:"A prehistoric family ventures beyond their cave after their world collapses.", s:"Peacock"},
+  {t:"Trolls", y:2016, g:["Animation","Musical"], b:"An optimistic troll sets off to rescue her friends from the gloomy Bergens.", s:"Peacock"},
+  {t:"Despicable Me", y:2010, g:["Animation","Comedy"], b:"A supervillain's plans unravel after he adopts three orphan girls.", s:"Peacock"},
+  {t:"Paddington", y:2014, g:["Animation","Comedy"], b:"A polite bear from Peru moves in with a London family, and chaos follows warmly.", s:"Check JustWatch"},
+
+  {t:"The Parent Trap", y:1998, g:["Comedy"], b:"Twin sisters separated at birth swap places to reunite their divorced parents.", s:"Disney+"},
+  {t:"Freaky Friday", y:2003, g:["Comedy","Coming of age"], b:"A mother and teenage daughter magically swap bodies right before a big audition.", s:"Disney+"},
+  {t:"Night at the Museum", y:2006, g:["Comedy","Action & adventure"], b:"A night guard discovers the museum's exhibits come alive after dark.", s:"Disney+"},
+  {t:"Ghostbusters", y:1984, g:["Comedy","Sci-fi & fantasy"], b:"Three scientists start a business catching ghosts terrorizing New York City.", s:"Check JustWatch"},
+  {t:"Grown Ups", y:2010, g:["Comedy"], b:"Five childhood friends reunite for a lake house weekend with their families.", s:"Check JustWatch"},
+  {t:"Cheaper by the Dozen", y:2003, g:["Comedy"], b:"A coach and his wife juggle careers and chaos while raising twelve kids.", s:"Disney+"},
+  {t:"The Princess Diaries", y:2001, g:["Comedy","Coming of age"], b:"An awkward San Francisco teen discovers she's secretly a European princess.", s:"Disney+"},
+  {t:"Hocus Pocus", y:1993, g:["Comedy","Sci-fi & fantasy"], b:"Three resurrected witches wreak Halloween havoc on a small Massachusetts town.", s:"Disney+"},
+
+  {t:"Indiana Jones and the Last Crusade", y:1989, g:["Action & adventure"], b:"Indiana Jones and his father race to find the Holy Grail before the Nazis.", s:"Paramount+"},
+  {t:"Jumanji: Welcome to the Jungle", y:2017, g:["Action & adventure","Comedy"], b:"Four teens are pulled into a video game and become the avatars they chose.", s:"Check JustWatch"},
+  {t:"Pirates of the Caribbean: The Curse of the Black Pearl", y:2003, g:["Action & adventure","Sci-fi & fantasy"], b:"A blacksmith teams up with a cursed pirate captain to rescue a kidnapped governor's daughter.", s:"Disney+"},
+  {t:"The Avengers", y:2012, g:["Action & adventure","Sci-fi & fantasy"], b:"Earth's mightiest heroes team up to stop a god from opening a portal for invasion.", s:"Disney+"},
+  {t:"Spider-Man: Homecoming", y:2017, g:["Action & adventure"], b:"A teenage Peter Parker balances high school life with his first real mission.", s:"Disney+"},
+
+  {t:"Star Wars: The Empire Strikes Back", y:1980, g:["Sci-fi & fantasy","Action & adventure"], b:"The rebellion regroups and Luke begins his Jedi training as the Empire closes in.", s:"Disney+"},
+  {t:"Harry Potter and the Chamber of Secrets", y:2002, g:["Sci-fi & fantasy","Coming of age"], b:"A mysterious force is petrifying students, and only a diary holds the answer.", s:"Peacock"},
+  {t:"A Wrinkle in Time", y:2018, g:["Sci-fi & fantasy"], b:"Three children tesseract across the universe to rescue their missing scientist father.", s:"Disney+"},
+  {t:"Ready Player One", y:2018, g:["Sci-fi & fantasy","Action & adventure"], b:"A teenager races through a virtual universe hunting an eccentric creator's hidden prize.", s:"Max"},
+  {t:"Jumanji", y:1995, g:["Sci-fi & fantasy","Action & adventure"], b:"Two kids release a man trapped for decades inside a mysterious board game.", s:"Check JustWatch"},
+  {t:"The NeverEnding Story", y:1984, g:["Sci-fi & fantasy"], b:"A grieving boy reads himself into a fantasy world that needs saving from The Nothing.", s:"Check JustWatch"},
+
+  {t:"Bridge to Terabithia", y:2007, g:["Drama","Coming of age"], b:"Two lonely kids invent a magical kingdom in the woods behind their homes.", s:"Disney+"},
+  {t:"Little Women", y:1994, g:["Drama","Coming of age"], b:"Four sisters grow up together in Civil War-era New England.", s:"Check JustWatch"},
+  {t:"McFarland, USA", y:2015, g:["Drama"], b:"A high school coach builds a championship cross-country team in a farming town.", s:"Disney+"},
+  {t:"Soul Surfer", y:2011, g:["Drama"], b:"A teenage surfer fights to get back in the water after losing an arm to a shark.", s:"Check JustWatch"},
+  {t:"The Blind Side", y:2009, g:["Drama"], b:"A homeless teen is taken in by a family who help him become a football star.", s:"Check JustWatch"},
+  {t:"Queen of Katwe", y:2016, g:["Drama"], b:"A girl from the slums of Kampala discovers she's a chess prodigy.", s:"Disney+"},
+
+  {t:"Mary Poppins", y:1964, g:["Musical","Comedy"], b:"A magical nanny brings order, and a little wonder, to two mischievous children.", s:"Disney+"},
+  {t:"The Sound of Music", y:1965, g:["Musical","Drama"], b:"A free-spirited governess brings music back to a widowed naval captain's family.", s:"Disney+"},
+  {t:"Annie", y:1982, g:["Musical"], b:"An orphan's life changes when a billionaire takes her in for the holidays.", s:"Check JustWatch"},
+  {t:"Sing 2", y:2021, g:["Musical","Animation"], b:"Buster Moon's troupe chases a shot at the biggest stage in show business.", s:"Peacock"},
+
+  {t:"Clue", y:1985, g:["Mystery & thriller","Comedy"], b:"Six strangers at a dinner party must solve a murder before they become victims.", s:"Check JustWatch"},
+  {t:"Now You See Me", y:2013, g:["Mystery & thriller","Action & adventure"], b:"A team of illusionists pull off elaborate heists during their live magic shows.", s:"Check JustWatch"},
+  {t:"Enola Holmes", y:2020, g:["Mystery & thriller","Coming of age"], b:"Sherlock's teenage sister sets off on her own to find her missing mother.", s:"Netflix"},
+
+  {t:"The Goonies", y:1985, g:["Coming of age","Action & adventure"], b:"A group of friends chase a pirate's treasure map to save their neighborhood.", s:"Max"},
+  {t:"The Karate Kid", y:1984, g:["Coming of age","Action & adventure"], b:"A bullied teen learns karate, and life lessons, from a quiet handyman.", s:"Check JustWatch"},
+  {t:"Diary of a Wimpy Kid", y:2010, g:["Coming of age","Comedy"], b:"A middle schooler chronicles his awkward first year of junior high in a journal.", s:"Disney+"},
+  {t:"The Outsiders", y:1983, g:["Coming of age","Drama"], b:"Two rival teen gangs clash across the tracks in 1960s Oklahoma.", s:"Check JustWatch"},
+  {t:"Now and Then", y:1995, g:["Coming of age","Drama"], b:"Four childhood best friends look back on the summer that changed everything.", s:"Check JustWatch"},
+  {t:"Big", y:1988, g:["Coming of age","Comedy"], b:"A 12-year-old wishes to be big and wakes up the next day in an adult's body.", s:"Check JustWatch"},
+  {t:"Matilda", y:1996, g:["Coming of age","Comedy"], b:"A gifted young girl with telekinetic powers stands up to a tyrannical headmistress.", s:"Check JustWatch"},
+];
+
+const GENRE_ORDER = ["Animation","Comedy","Action & adventure","Sci-fi & fantasy","Drama","Musical","Mystery & thriller","Coming of age"];
+
+const TMDB_GENRE_MAP = {
+  "action":"Action & adventure","adventure":"Action & adventure","animation":"Animation",
+  "comedy":"Comedy","crime":"Mystery & thriller","drama":"Drama","family":"Comedy",
+  "fantasy":"Sci-fi & fantasy","history":"Drama","horror":"Mystery & thriller",
+  "music":"Musical","mystery":"Mystery & thriller","romance":"Drama",
+  "science fiction":"Sci-fi & fantasy","tv movie":"Drama","thriller":"Mystery & thriller",
+  "war":"Drama","western":"Action & adventure","documentary":"Drama"
+};
+
+let watchedIds = new Set();
+let activeGenres = new Set();
+let groupByGenre = true;
+let customMovies = [];
+let currentUid = null;
+let unsubSnapshot = null;
+
+function movieId(m){ return m.t + "|" + m.y; }
+function allMovies(){ return MOVIES.concat(customMovies); }
+function isDuplicate(t, y){
+  const tl = t.toLowerCase();
+  return allMovies().some(m => m.t.toLowerCase() === tl && m.y === y);
+}
+
+/* ---------------- Firestore sync ---------------- */
+
+function userDocRef(uid){ return doc(db, "users", uid); }
+
+function attachUserListener(uid){
+  if(unsubSnapshot) unsubSnapshot();
+  unsubSnapshot = onSnapshot(userDocRef(uid), (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    watchedIds = new Set(Array.isArray(data.watched) ? data.watched : []);
+    customMovies = Array.isArray(data.custom) ? data.custom : [];
+    render();
+  });
+}
+
+async function persist(){
+  if(!currentUid) return;
+  try{
+    await setDoc(userDocRef(currentUid), {
+      watched: [...watchedIds],
+      custom: customMovies
+    }, { merge: true });
+  }catch(e){ /* next snapshot will just reflect last successful write */ }
+}
+
+/* ---------------- Auth ---------------- */
+
+document.getElementById('googleSignIn').addEventListener('click', async () => {
+  const status = document.getElementById('signinStatus');
+  status.textContent = "Signing in…";
+  try{
+    await signInWithPopup(auth, provider);
+  }catch(e){
+    status.textContent = "Couldn't sign in — try again.";
+  }
+});
+
+document.getElementById('signOutBtn').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  if(user){
+    currentUid = user.uid;
+    document.getElementById('signinScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    document.getElementById('accountLabel').textContent = "Signed in as " + (user.displayName || user.email || "you");
+    buildChips();
+    attachUserListener(user.uid);
+  }else{
+    currentUid = null;
+    if(unsubSnapshot){ unsubSnapshot(); unsubSnapshot = null; }
+    watchedIds = new Set();
+    customMovies = [];
+    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('signinScreen').style.display = 'flex';
+    document.getElementById('signinStatus').textContent = "";
+  }
+});
+
+/* ---------------- TMDB lookups ---------------- */
+
+function mapGenres(genreNames){
+  const out = [];
+  (genreNames || []).forEach(name => {
+    const mapped = TMDB_GENRE_MAP[String(name).toLowerCase()];
+    if(mapped && !out.includes(mapped)) out.push(mapped);
+  });
+  return out.length ? out : ["Drama"];
+}
+
+function bestStreamingName(providerData){
+  const us = providerData && providerData.results && providerData.results.US;
+  if(!us) return "Check JustWatch";
+  const bucket = us.flatrate || us.free || us.ads || us.rent || us.buy;
+  if(bucket && bucket.length) return bucket[0].provider_name;
+  return "Check JustWatch";
+}
+
+async function tmdbFetch(path){
+  const sep = path.includes('?') ? '&' : '?';
+  const res = await fetch(`${TMDB_BASE}${path}${sep}api_key=${TMDB_KEY}`);
+  if(!res.ok) throw new Error('TMDB request failed');
+  return res.json();
+}
+
+async function movieFromTmdbId(id){
+  const details = await tmdbFetch(`/movie/${id}?append_to_response=watch/providers`);
+  const year = details.release_date ? parseInt(details.release_date.slice(0,4), 10) : null;
+  if(!year) return null;
+  return {
+    t: details.title,
+    y: year,
+    g: mapGenres((details.genres || []).map(g => g.name)),
+    b: (details.tagline && details.tagline.trim()) ? details.tagline.trim() : (details.overview || "").split(/(?<=[.!?])\s/)[0].slice(0,140),
+    s: bestStreamingName(details["watch/providers"])
+  };
+}
+
+async function searchAndAdd(query){
+  const multi = await tmdbFetch(`/search/multi?query=${encodeURIComponent(query)}`);
+  const results = multi.results || [];
+  const person = results.find(r => r.media_type === 'person');
+  const movieHit = results.find(r => r.media_type === 'movie');
+
+  // Prefer a person match when it ranks at or above the best movie match
+  if(person && (!movieHit || results.indexOf(person) <= results.indexOf(movieHit))){
+    const credits = await tmdbFetch(`/person/${person.id}/movie_credits`);
+    const cast = (credits.cast || [])
+      .filter(m => m.release_date && !m.adult)
+      .sort((a,b) => (b.popularity||0) - (a.popularity||0))
+      .slice(0, 12);
+    const built = [];
+    for(const c of cast){
+      try{
+        const m = await movieFromTmdbId(c.id);
+        if(m) built.push(m);
+      }catch(e){ /* skip a title that fails to fetch */ }
+    }
+    return built;
+  }
+
+  if(movieHit){
+    const m = await movieFromTmdbId(movieHit.id);
+    return m ? [m] : [];
+  }
+  return [];
+}
+
+async function handleAdd(){
+  const input = document.getElementById('addInput');
+  const status = document.getElementById('addStatus');
+  const btn = document.getElementById('addBtn');
+  const query = input.value.trim();
+  if(!query){
+    status.style.color = 'var(--warn)';
+    status.textContent = "Type a movie title or an actor's name first.";
+    return;
+  }
+  btn.disabled = true;
+  status.style.color = 'var(--muted)';
+  status.textContent = 'Searching TMDB…';
+  try{
+    const results = await searchAndAdd(query);
+    let added = 0;
+    let lastTitle = '';
+    results.forEach(v => {
+      if(v && v.t && v.y && !isDuplicate(v.t, v.y)){
+        customMovies.push(v);
+        lastTitle = v.t;
+        added++;
+      }
+    });
+    if(added > 0){
+      await persist();
+      status.style.color = 'var(--watched)';
+      status.textContent = added === 1 ? `Added "${lastTitle}".` : `Added ${added} movies.`;
+      input.value = '';
+    }else{
+      status.style.color = 'var(--muted)';
+      status.textContent = 'Nothing new — already on the list, or nothing found.';
+    }
+  }catch(e){
+    status.style.color = 'var(--warn)';
+    status.textContent = "Couldn't reach TMDB just now — try again in a moment.";
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ---------------- Rendering (list, filters, sort, group) ---------------- */
+
+function buildChips(){
+  const wrap = document.getElementById('genreChips');
+  wrap.innerHTML = '';
+  GENRE_ORDER.forEach(g=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = g;
+    chip.dataset.genre = g;
+    chip.addEventListener('click', ()=>{
+      if(activeGenres.has(g)) activeGenres.delete(g);
+      else activeGenres.add(g);
+      chip.classList.toggle('active');
+      render();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+function matchesFilters(m){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  if(q && !m.t.toLowerCase().includes(q)) return false;
+  if(activeGenres.size > 0){
+    const hit = m.g.some(g=>activeGenres.has(g));
+    if(!hit) return false;
+  }
+  const wsel = document.getElementById('watchedSelect').value;
+  const isWatched = watchedIds.has(movieId(m));
+  if(wsel === 'watched' && !isWatched) return false;
+  if(wsel === 'unwatched' && isWatched) return false;
+  return true;
+}
+
+function sortMovies(arr){
+  const mode = document.getElementById('sortSelect').value;
+  const copy = arr.slice();
+  if(mode === 'title') copy.sort((a,b)=>a.t.localeCompare(b.t));
+  else if(mode === 'year-old') copy.sort((a,b)=>a.y-b.y);
+  else if(mode === 'year-new') copy.sort((a,b)=>b.y-a.y);
+  return copy;
+}
+
+function movieRow(m, isCustom){
+  const id = movieId(m);
+  const isWatched = watchedIds.has(id);
+  const row = document.createElement('div');
+  row.className = 'movie' + (isWatched ? ' watched' : '');
+  row.innerHTML = `
+    <div class="stub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#17112a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div class="body">
+      <div class="top-line"><span class="title">${m.t}</span><span class="year">${m.y}</span></div>
+      <div class="blurb">${m.b || ''}</div>
+      <div class="meta-row">
+        <span class="badge">${m.g.join(' · ')}</span>
+        <a class="badge stream" href="https://www.justwatch.com/us/search?q=${encodeURIComponent(m.t)}" target="_blank" rel="noopener">${m.s}</a>
+        ${isCustom ? '<span class="badge custom">added by you</span>' : ''}
+      </div>
+    </div>
+  `;
+  const streamLink = row.querySelector('.badge.stream');
+  streamLink.addEventListener('click', (e) => { e.stopPropagation(); });
+  row.addEventListener('click', ()=>{
+    if(watchedIds.has(id)) watchedIds.delete(id);
+    else watchedIds.add(id);
+    persist();
+  });
+  return row;
+}
+
+function render(){
+  const list = document.getElementById('list');
+  const empty = document.getElementById('emptyState');
+  list.innerHTML = '';
+
+  const customSet = new Set(customMovies.map(movieId));
+  const everything = allMovies();
+  const filtered = sortMovies(everything.filter(matchesFilters));
+
+  document.getElementById('totalCount').textContent = everything.length;
+  const watchedTotal = everything.filter(m=>watchedIds.has(movieId(m))).length;
+  document.getElementById('watchedCount').textContent = watchedTotal;
+  document.getElementById('barFill').style.width = (everything.length ? Math.round((watchedTotal/everything.length)*100) : 0) + '%';
+
+  if(filtered.length === 0){
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  if(groupByGenre){
+    GENRE_ORDER.forEach(g=>{
+      const inGroup = filtered.filter(m=>m.g[0]===g);
+      if(inGroup.length === 0) return;
+      const section = document.createElement('div');
+      section.className = 'genre-group';
+      const watchedInGroup = inGroup.filter(m=>watchedIds.has(movieId(m))).length;
+      section.innerHTML = `<div class="genre-head"><h2>${g}</h2><span class="count">${watchedInGroup}/${inGroup.length} watched</span></div>`;
+      inGroup.forEach(m=>section.appendChild(movieRow(m, customSet.has(movieId(m)))));
+      list.appendChild(section);
+    });
+  }else{
+    filtered.forEach(m=>list.appendChild(movieRow(m, customSet.has(movieId(m)))));
+  }
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('sortSelect').addEventListener('change', render);
+document.getElementById('watchedSelect').addEventListener('change', render);
+document.getElementById('groupToggle').addEventListener('click', function(){
+  groupByGenre = !groupByGenre;
+  this.classList.toggle('on', groupByGenre);
+  render();
+});
+document.getElementById('addBtn').addEventListener('click', handleAdd);
+document.getElementById('addInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') handleAdd();
+});
+</script>
+</body>
+</html>
