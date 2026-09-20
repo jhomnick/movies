@@ -267,27 +267,36 @@
   }
   .genre-head .count{ font-size:0.78rem; color:var(--muted); white-space:nowrap; }
 
+  .filter-label{
+    display:block;
+    font-size:0.76rem;
+    color:var(--muted);
+    margin-bottom:-0.15rem;
+  }
+
   .movie{
     display:flex;
     gap:0.75rem;
     padding:0.7rem 0;
     border-bottom:1px solid var(--line);
-    cursor:pointer;
   }
   .movie:last-child{ border-bottom:none; }
   .movie .stub{
     flex-shrink:0;
-    width:26px; height:26px;
+    width:32px; height:32px;
     border-radius:50%;
     border:1.5px solid var(--line-strong);
+    background:none;
     display:flex; align-items:center; justify-content:center;
-    margin-top:0.15rem;
+    margin-top:0.05rem;
+    padding:0;
+    cursor:pointer;
     transition:border-color 0.15s, background 0.15s;
   }
   .movie .stub svg{ width:13px; height:13px; opacity:0; transition:opacity 0.15s; }
   .movie.watched .stub{ background:var(--watched); border-color:var(--watched); }
   .movie.watched .stub svg{ opacity:1; }
-  .movie .body{ flex:1; min-width:0; }
+  .movie .body{ flex:1; min-width:0; cursor:pointer; }
   .movie .top-line{ display:flex; align-items:baseline; gap:0.45rem; flex-wrap:wrap; }
   .movie .title{ font-weight:500; font-size:0.98rem; }
   .movie .year{ font-size:0.82rem; color:var(--muted); }
@@ -303,9 +312,84 @@
     color:var(--cream);
     border:1px solid var(--line);
   }
+  button.badge{ font-family:'Work Sans', sans-serif; cursor:pointer; }
   .badge.stream{ color:var(--gold); border-color:rgba(229,184,90,0.35); text-decoration:none; cursor:pointer; }
   .badge.stream:hover{ border-color:var(--gold); }
   .badge.custom{ color:var(--watched); border-color:rgba(95,174,157,0.35); }
+  .badge.rating{ color:var(--cream); border-color:var(--line-strong); font-weight:500; }
+  .badge.runtime{ color:var(--muted); }
+  .badge.delete{
+    margin-left:auto;
+    color:var(--warn);
+    border-color:rgba(224,133,122,0.35);
+    background:transparent;
+  }
+  .badge.delete:hover{ border-color:var(--warn); background:rgba(224,133,122,0.12); }
+
+  /* ---- movie detail modal ---- */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(8,6,16,0.72);
+    display:flex; align-items:flex-end;
+    justify-content:center;
+    z-index:50;
+    padding:0;
+  }
+  .modal-card{
+    background:var(--surface);
+    border:1px solid var(--line-strong);
+    border-radius:16px 16px 0 0;
+    max-width:520px;
+    width:100%;
+    max-height:85vh;
+    overflow-y:auto;
+    padding:1.4rem 1.3rem 1.6rem;
+    position:relative;
+  }
+  @media (min-width:600px){
+    .modal-overlay{ align-items:center; padding:1.5rem; }
+    .modal-card{ border-radius:16px; }
+  }
+  .modal-close{
+    position:absolute; top:0.9rem; right:0.9rem;
+    width:30px; height:30px;
+    border-radius:50%;
+    border:1px solid var(--line-strong);
+    background:var(--surface-2);
+    color:var(--cream);
+    font-size:1.1rem;
+    line-height:1;
+    cursor:pointer;
+  }
+  .modal-body .m-title{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:1.5rem;
+    margin:0 0.5rem 0.3rem 0;
+    padding-right:2rem;
+  }
+  .modal-body .m-sub{ font-size:0.85rem; color:var(--muted); margin-bottom:0.9rem; }
+  .modal-body .m-badges{ display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:1rem; }
+  .modal-body .m-blurb{ font-size:0.94rem; line-height:1.55; color:var(--cream); margin-bottom:1.3rem; }
+  .modal-actions{ display:flex; flex-wrap:wrap; gap:0.6rem; }
+  .modal-actions button{
+    font-family:'Work Sans', sans-serif;
+    font-weight:500;
+    font-size:0.88rem;
+    padding:0.6rem 1rem;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .modal-actions .btn-watched{
+    background:var(--watched-soft);
+    border:1px solid var(--watched);
+    color:var(--watched);
+  }
+  .modal-actions .btn-delete{
+    background:transparent;
+    border:1px solid rgba(224,133,122,0.5);
+    color:var(--warn);
+  }
 
   .empty{
     text-align:center;
@@ -345,7 +429,7 @@
   <div class="wrap">
     <header class="hero">
       <h1>Movie nights</h1>
-      <p>A running list of great movies for thirteen-year-olds and their parents to watch together. Tap a title to mark it watched, filter by mood, and sort however you like.</p>
+      <p>A running list of great movies for thirteen-year-olds and their parents to watch together. Tap the circle to mark a movie watched, tap the title for details, filter by mood, age rating or runtime, and sort however you like.</p>
       <div class="stat-row">
         <span class="num" id="watchedCount">0</span>
         <span class="label">of <span id="totalCount">0</span> watched</span>
@@ -372,6 +456,9 @@
           <option value="title">Sort: title A–Z</option>
           <option value="year-old">Sort: oldest first</option>
           <option value="year-new">Sort: newest first</option>
+          <option value="rating">Sort: age rating (G→R)</option>
+          <option value="runtime-short">Sort: runtime, shortest first</option>
+          <option value="runtime-long">Sort: runtime, longest first</option>
         </select>
         <select id="watchedSelect">
           <option value="all">Show: everything</option>
@@ -379,7 +466,18 @@
           <option value="watched">Show: already watched</option>
         </select>
       </div>
+      <div class="row-2">
+        <select id="runtimeSelect">
+          <option value="all">Runtime: any length</option>
+          <option value="short">Under 90 min</option>
+          <option value="medium">90–120 min</option>
+          <option value="long">Over 120 min</option>
+        </select>
+      </div>
+      <span class="filter-label">Genre</span>
       <div class="chips" id="genreChips"></div>
+      <span class="filter-label">Age rating</span>
+      <div class="chips" id="ratingChips"></div>
       <div class="toggle-row">
         <span class="txt">Group rows by genre</span>
         <div class="switch on" id="groupToggle"><div class="knob"></div></div>
@@ -391,8 +489,15 @@
   </div>
 
   <footer>
-    Streaming homes come from TMDB / JustWatch data and shift often as licensing deals change — double-check before movie night. Your checked-off progress and additions sync automatically to your account across every device you sign into.
+    Streaming homes, age ratings and runtimes come from TMDB / JustWatch data (with a few filled in by hand) and can shift or be slightly off — double-check before movie night. Your checked-off progress, additions and removals sync automatically to your account across every device you sign into.
   </footer>
+</div>
+
+<div class="modal-overlay" id="movieModal" style="display:none;">
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
 </div>
 
 <script type="module">
@@ -418,122 +523,125 @@ const TMDB_KEY = "43f31068f337f050e0a44993b616c266";
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
 const MOVIES = [
-  {t:"Toy Story", y:1995, g:["Animation"], b:"A cowboy doll's jealousy of a new spaceman toy kicks off Pixar's first feature.", s:"Disney+"},
-  {t:"The Incredibles", y:2004, g:["Animation","Action & adventure"], b:"A family of retired superheroes is pulled back into the fight.", s:"Disney+"},
-  {t:"Ratatouille", y:2007, g:["Animation","Comedy"], b:"A rat with a gift for cooking sneaks into a Paris kitchen.", s:"Disney+"},
-  {t:"Up", y:2009, g:["Animation","Drama"], b:"A widower ties balloons to his house and flies to South America.", s:"Disney+"},
-  {t:"Coco", y:2017, g:["Animation","Musical"], b:"A boy crosses into the Land of the Dead on Día de los Muertos.", s:"Disney+"},
-  {t:"Inside Out", y:2015, g:["Animation","Comedy"], b:"Five emotions steer an 11-year-old through a big move and bigger feelings.", s:"Disney+"},
-  {t:"Zootopia", y:2016, g:["Animation","Mystery & thriller"], b:"A rookie rabbit cop and a fox con artist crack a missing-mammals case.", s:"Disney+"},
-  {t:"How to Train Your Dragon", y:2010, g:["Animation","Action & adventure"], b:"A Viking teen befriends the dragon he was raised to slay.", s:"Peacock"},
-  {t:"Kung Fu Panda", y:2008, g:["Animation","Comedy"], b:"An out-of-shape panda is chosen as a kung fu master, to everyone's disbelief.", s:"Peacock"},
-  {t:"The Lego Movie", y:2014, g:["Animation","Comedy"], b:"An ordinary construction figure is mistaken for the key to saving the universe.", s:"Max"},
-  {t:"Shrek", y:2001, g:["Animation","Comedy"], b:"A grumpy ogre and a talking donkey set off to rescue a princess.", s:"Peacock"},
-  {t:"Spider-Man: Into the Spider-Verse", y:2018, g:["Animation","Action & adventure"], b:"Miles Morales meets Spider-people from other dimensions.", s:"Netflix"},
-  {t:"The Iron Giant", y:1999, g:["Animation","Sci-fi & fantasy"], b:"A boy hides a giant robot from the government during the Cold War.", s:"Max"},
-  {t:"Coraline", y:2009, g:["Mystery & thriller","Animation"], b:"A girl finds a door to a flattering, and increasingly sinister, other world.", s:"Netflix"},
+  {t:"Toy Story", y:1995, g:["Animation"], b:"A cowboy doll's jealousy of a new spaceman toy kicks off Pixar's first feature.", s:"Disney+", r:"G", rt:81},
+  {t:"The Incredibles", y:2004, g:["Animation","Action & adventure"], b:"A family of retired superheroes is pulled back into the fight.", s:"Disney+", r:"PG", rt:115},
+  {t:"Ratatouille", y:2007, g:["Animation","Comedy"], b:"A rat with a gift for cooking sneaks into a Paris kitchen.", s:"Disney+", r:"G", rt:111},
+  {t:"Up", y:2009, g:["Animation","Drama"], b:"A widower ties balloons to his house and flies to South America.", s:"Disney+", r:"PG", rt:96},
+  {t:"Coco", y:2017, g:["Animation","Musical"], b:"A boy crosses into the Land of the Dead on Día de los Muertos.", s:"Disney+", r:"PG", rt:105},
+  {t:"Inside Out", y:2015, g:["Animation","Comedy"], b:"Five emotions steer an 11-year-old through a big move and bigger feelings.", s:"Disney+", r:"PG", rt:95},
+  {t:"Zootopia", y:2016, g:["Animation","Mystery & thriller"], b:"A rookie rabbit cop and a fox con artist crack a missing-mammals case.", s:"Disney+", r:"PG", rt:108},
+  {t:"How to Train Your Dragon", y:2010, g:["Animation","Action & adventure"], b:"A Viking teen befriends the dragon he was raised to slay.", s:"Peacock", r:"PG", rt:98},
+  {t:"Kung Fu Panda", y:2008, g:["Animation","Comedy"], b:"An out-of-shape panda is chosen as a kung fu master, to everyone's disbelief.", s:"Peacock", r:"PG", rt:92},
+  {t:"The Lego Movie", y:2014, g:["Animation","Comedy"], b:"An ordinary construction figure is mistaken for the key to saving the universe.", s:"Max", r:"PG", rt:100},
+  {t:"Shrek", y:2001, g:["Animation","Comedy"], b:"A grumpy ogre and a talking donkey set off to rescue a princess.", s:"Peacock", r:"PG", rt:90},
+  {t:"Spider-Man: Into the Spider-Verse", y:2018, g:["Animation","Action & adventure"], b:"Miles Morales meets Spider-people from other dimensions.", s:"Netflix", r:"PG", rt:117},
+  {t:"The Iron Giant", y:1999, g:["Animation","Sci-fi & fantasy"], b:"A boy hides a giant robot from the government during the Cold War.", s:"Max", r:"PG", rt:86},
+  {t:"Coraline", y:2009, g:["Mystery & thriller","Animation"], b:"A girl finds a door to a flattering, and increasingly sinister, other world.", s:"Netflix", r:"PG", rt:100},
 
-  {t:"Home Alone", y:1990, g:["Comedy"], b:"An eight-year-old defends his house against two bumbling burglars.", s:"Disney+"},
-  {t:"Ferris Bueller's Day Off", y:1986, g:["Comedy"], b:"A high schooler talks his way through one perfect day of skipping class.", s:"Paramount+"},
-  {t:"School of Rock", y:2003, g:["Comedy"], b:"A wannabe rocker poses as a substitute teacher and forms a band with his class.", s:"Paramount+"},
-  {t:"Mean Girls", y:2004, g:["Comedy"], b:"A homeschooled teen navigates the brutal social rules of public high school.", s:"Paramount+"},
-  {t:"Napoleon Dynamite", y:2004, g:["Comedy"], b:"An awkward teen helps a friend run for class president in small-town Idaho.", s:"Check JustWatch"},
-  {t:"Elf", y:2003, g:["Comedy"], b:"A human raised as one of Santa's elves goes to New York to find his father.", s:"Max"},
-  {t:"The Sandlot", y:1993, g:["Comedy","Coming of age"], b:"A new kid joins a neighborhood baseball crew for one unforgettable summer.", s:"Disney+"},
+  {t:"Home Alone", y:1990, g:["Comedy"], b:"An eight-year-old defends his house against two bumbling burglars.", s:"Disney+", r:"PG", rt:103},
+  {t:"Ferris Bueller's Day Off", y:1986, g:["Comedy"], b:"A high schooler talks his way through one perfect day of skipping class.", s:"Paramount+", r:"PG-13", rt:103},
+  {t:"School of Rock", y:2003, g:["Comedy"], b:"A wannabe rocker poses as a substitute teacher and forms a band with his class.", s:"Paramount+", r:"PG-13", rt:109},
+  {t:"Mean Girls", y:2004, g:["Comedy"], b:"A homeschooled teen navigates the brutal social rules of public high school.", s:"Paramount+", r:"PG-13", rt:97},
+  {t:"Napoleon Dynamite", y:2004, g:["Comedy"], b:"An awkward teen helps a friend run for class president in small-town Idaho.", s:"Check JustWatch", r:"PG", rt:95},
+  {t:"Elf", y:2003, g:["Comedy"], b:"A human raised as one of Santa's elves goes to New York to find his father.", s:"Max", r:"PG", rt:97},
+  {t:"The Sandlot", y:1993, g:["Comedy","Coming of age"], b:"A new kid joins a neighborhood baseball crew for one unforgettable summer.", s:"Disney+", r:"PG", rt:101},
 
-  {t:"Jurassic Park", y:1993, g:["Action & adventure","Sci-fi & fantasy"], b:"A theme park of cloned dinosaurs goes very wrong very fast.", s:"Peacock"},
-  {t:"Raiders of the Lost Ark", y:1981, g:["Action & adventure"], b:"Archaeologist Indiana Jones races the Nazis to the Ark of the Covenant.", s:"Paramount+"},
-  {t:"Star Wars: A New Hope", y:1977, g:["Sci-fi & fantasy","Action & adventure"], b:"A farm boy joins a rebellion against a galactic empire.", s:"Disney+"},
-  {t:"National Treasure", y:2004, g:["Action & adventure","Mystery & thriller"], b:"A historian follows a map on the back of the Declaration of Independence.", s:"Disney+"},
-  {t:"Guardians of the Galaxy", y:2014, g:["Action & adventure","Comedy"], b:"A ragtag crew of misfits protects the galaxy, badly, and with a great soundtrack.", s:"Disney+"},
-  {t:"Percy Jackson & the Olympians: The Lightning Thief", y:2010, g:["Action & adventure","Sci-fi & fantasy"], b:"A boy learns he's the son of Poseidon and sets off on a quest.", s:"Check JustWatch"},
-  {t:"The Mummy", y:1999, g:["Action & adventure","Mystery & thriller"], b:"Treasure hunters accidentally wake a cursed ancient priest in Egypt.", s:"Peacock"},
-  {t:"Spy Kids", y:2001, g:["Action & adventure","Comedy"], b:"Two siblings discover their parents are retired secret agents.", s:"Check JustWatch"},
+  {t:"Jurassic Park", y:1993, g:["Action & adventure","Sci-fi & fantasy"], b:"A theme park of cloned dinosaurs goes very wrong very fast.", s:"Peacock", r:"PG-13", rt:127},
+  {t:"Raiders of the Lost Ark", y:1981, g:["Action & adventure"], b:"Archaeologist Indiana Jones races the Nazis to the Ark of the Covenant.", s:"Paramount+", r:"PG", rt:115},
+  {t:"Star Wars: A New Hope", y:1977, g:["Sci-fi & fantasy","Action & adventure"], b:"A farm boy joins a rebellion against a galactic empire.", s:"Disney+", r:"PG", rt:121},
+  {t:"National Treasure", y:2004, g:["Action & adventure","Mystery & thriller"], b:"A historian follows a map on the back of the Declaration of Independence.", s:"Disney+", r:"PG", rt:131},
+  {t:"Guardians of the Galaxy", y:2014, g:["Action & adventure","Comedy"], b:"A ragtag crew of misfits protects the galaxy, badly, and with a great soundtrack.", s:"Disney+", r:"PG-13", rt:121},
+  {t:"Percy Jackson & the Olympians: The Lightning Thief", y:2010, g:["Action & adventure","Sci-fi & fantasy"], b:"A boy learns he's the son of Poseidon and sets off on a quest.", s:"Check JustWatch", r:"PG", rt:118},
+  {t:"The Mummy", y:1999, g:["Action & adventure","Mystery & thriller"], b:"Treasure hunters accidentally wake a cursed ancient priest in Egypt.", s:"Peacock", r:"PG-13", rt:124},
+  {t:"Spy Kids", y:2001, g:["Action & adventure","Comedy"], b:"Two siblings discover their parents are retired secret agents.", s:"Check JustWatch", r:"PG", rt:88},
 
-  {t:"E.T. the Extra-Terrestrial", y:1982, g:["Sci-fi & fantasy","Drama"], b:"A boy hides and befriends a stranded alien in his suburban home.", s:"Peacock"},
-  {t:"Back to the Future", y:1985, g:["Sci-fi & fantasy","Comedy"], b:"A teenager accidentally travels 30 years back in time in a DeLorean.", s:"Peacock"},
-  {t:"The Chronicles of Narnia: The Lion, the Witch and the Wardrobe", y:2005, g:["Sci-fi & fantasy","Action & adventure"], b:"Four siblings step through a wardrobe into a land under an endless winter.", s:"Disney+"},
-  {t:"Harry Potter and the Sorcerer's Stone", y:2001, g:["Sci-fi & fantasy","Coming of age"], b:"An orphan discovers he's a wizard and starts school at Hogwarts.", s:"Peacock"},
-  {t:"The Princess Bride", y:1987, g:["Sci-fi & fantasy","Comedy"], b:"A grandfather reads his sick grandson a tale of true love and revenge.", s:"Disney+"},
-  {t:"Wonder Woman", y:2017, g:["Action & adventure","Sci-fi & fantasy"], b:"An Amazon princess leaves her island to fight in the First World War.", s:"Max"},
+  {t:"E.T. the Extra-Terrestrial", y:1982, g:["Sci-fi & fantasy","Drama"], b:"A boy hides and befriends a stranded alien in his suburban home.", s:"Peacock", r:"PG", rt:115},
+  {t:"Back to the Future", y:1985, g:["Sci-fi & fantasy","Comedy"], b:"A teenager accidentally travels 30 years back in time in a DeLorean.", s:"Peacock", r:"PG", rt:116},
+  {t:"The Chronicles of Narnia: The Lion, the Witch and the Wardrobe", y:2005, g:["Sci-fi & fantasy","Action & adventure"], b:"Four siblings step through a wardrobe into a land under an endless winter.", s:"Disney+", r:"PG", rt:143},
+  {t:"Harry Potter and the Sorcerer's Stone", y:2001, g:["Sci-fi & fantasy","Coming of age"], b:"An orphan discovers he's a wizard and starts school at Hogwarts.", s:"Peacock", r:"PG", rt:152},
+  {t:"The Princess Bride", y:1987, g:["Sci-fi & fantasy","Comedy"], b:"A grandfather reads his sick grandson a tale of true love and revenge.", s:"Disney+", r:"PG", rt:98},
+  {t:"Wonder Woman", y:2017, g:["Action & adventure","Sci-fi & fantasy"], b:"An Amazon princess leaves her island to fight in the First World War.", s:"Max", r:"PG-13", rt:141},
 
-  {t:"Wonder", y:2017, g:["Drama","Coming of age"], b:"A boy with a facial difference starts mainstream school for the first time.", s:"Check JustWatch"},
-  {t:"Stand By Me", y:1986, g:["Drama","Coming of age"], b:"Four boys hike through the woods to find a body they've heard about.", s:"Check JustWatch"},
-  {t:"Hidden Figures", y:2016, g:["Drama"], b:"Three Black women mathematicians help launch NASA's first orbital missions.", s:"Disney+"},
-  {t:"Remember the Titans", y:2000, g:["Drama"], b:"A newly integrated football team learns to play, and get along, together.", s:"Disney+"},
-  {t:"Akeelah and the Bee", y:2006, g:["Drama","Coming of age"], b:"An 11-year-old from South LA trains for the National Spelling Bee.", s:"Check JustWatch"},
-  {t:"October Sky", y:1999, g:["Drama","Coming of age"], b:"A coal miner's son builds rockets after watching Sputnik cross the sky.", s:"Check JustWatch"},
+  {t:"Wonder", y:2017, g:["Drama","Coming of age"], b:"A boy with a facial difference starts mainstream school for the first time.", s:"Check JustWatch", r:"PG", rt:113},
+  {t:"Stand By Me", y:1986, g:["Drama","Coming of age"], b:"Four boys hike through the woods to find a body they've heard about.", s:"Check JustWatch", r:"R", rt:89},
+  {t:"Hidden Figures", y:2016, g:["Drama"], b:"Three Black women mathematicians help launch NASA's first orbital missions.", s:"Disney+", r:"PG", rt:127},
+  {t:"Remember the Titans", y:2000, g:["Drama"], b:"A newly integrated football team learns to play, and get along, together.", s:"Disney+", r:"PG", rt:113},
+  {t:"Akeelah and the Bee", y:2006, g:["Drama","Coming of age"], b:"An 11-year-old from South LA trains for the National Spelling Bee.", s:"Check JustWatch", r:"PG", rt:112},
+  {t:"October Sky", y:1999, g:["Drama","Coming of age"], b:"A coal miner's son builds rockets after watching Sputnik cross the sky.", s:"Check JustWatch", r:"PG", rt:108},
 
-  {t:"The Greatest Showman", y:2017, g:["Musical"], b:"A retelling of P.T. Barnum's rise as a circus showman.", s:"Disney+"},
-  {t:"Sing", y:2016, g:["Musical","Animation"], b:"A koala impresario stages a singing contest to save his theater.", s:"Peacock"},
-  {t:"High School Musical", y:2006, g:["Musical","Comedy"], b:"A jock and a brainy new girl both try out for the school musical.", s:"Disney+"},
-  {t:"Encanto", y:2021, g:["Musical","Animation"], b:"Every child in a magical Colombian family gets a gift, except one.", s:"Disney+"},
+  {t:"The Greatest Showman", y:2017, g:["Musical"], b:"A retelling of P.T. Barnum's rise as a circus showman.", s:"Disney+", r:"PG", rt:105},
+  {t:"Sing", y:2016, g:["Musical","Animation"], b:"A koala impresario stages a singing contest to save his theater.", s:"Peacock", r:"PG", rt:108},
+  {t:"High School Musical", y:2006, g:["Musical","Comedy"], b:"A jock and a brainy new girl both try out for the school musical.", s:"Disney+", r:"TV-G", rt:98},
+  {t:"Encanto", y:2021, g:["Musical","Animation"], b:"Every child in a magical Colombian family gets a gift, except one.", s:"Disney+", r:"PG", rt:102},
 
-  {t:"Knives Out", y:2019, g:["Mystery & thriller"], b:"A famous mystery novelist dies, and a detective sorts through his scheming family.", s:"Netflix"},
-  {t:"Holes", y:2003, g:["Mystery & thriller","Coming of age"], b:"A boy sent to a juvenile work camp uncovers a decades-old buried secret.", s:"Disney+"},
+  {t:"Knives Out", y:2019, g:["Mystery & thriller"], b:"A famous mystery novelist dies, and a detective sorts through his scheming family.", s:"Netflix", r:"PG-13", rt:130},
+  {t:"Holes", y:2003, g:["Mystery & thriller","Coming of age"], b:"A boy sent to a juvenile work camp uncovers a decades-old buried secret.", s:"Disney+", r:"PG", rt:117},
 
-  {t:"Finding Nemo", y:2003, g:["Animation"], b:"A clownfish crosses the ocean to rescue his son from a dentist's fish tank.", s:"Disney+"},
-  {t:"Monsters, Inc.", y:2001, g:["Animation","Comedy"], b:"Two monster coworkers discover a little girl has followed them home.", s:"Disney+"},
-  {t:"Wreck-It Ralph", y:2012, g:["Animation","Action & adventure"], b:"An arcade villain jumps between video games looking to become a hero.", s:"Disney+"},
-  {t:"Moana", y:2016, g:["Animation","Musical"], b:"A wayfinder sails beyond the reef to save her island and find a lost demigod.", s:"Disney+"},
-  {t:"Frozen", y:2013, g:["Animation","Musical"], b:"A princess sets out to find her sister, whose icy powers have frozen their kingdom.", s:"Disney+"},
-  {t:"Big Hero 6", y:2014, g:["Animation","Action & adventure"], b:"A boy and his inflatable robot chase down whoever's behind a citywide plot.", s:"Disney+"},
-  {t:"The Lego Batman Movie", y:2017, g:["Animation","Comedy"], b:"Gotham's most self-absorbed hero has to learn to work as part of a family.", s:"Max"},
-  {t:"Spirited Away", y:2001, g:["Animation","Sci-fi & fantasy"], b:"A girl works in a bathhouse for spirits to save her transformed parents.", s:"Max"},
-  {t:"Klaus", y:2019, g:["Animation","Comedy"], b:"A lazy postman and a reclusive toymaker accidentally start a Christmas tradition.", s:"Netflix"},
-  {t:"The Croods", y:2013, g:["Animation","Comedy"], b:"A prehistoric family ventures beyond their cave after their world collapses.", s:"Peacock"},
-  {t:"Trolls", y:2016, g:["Animation","Musical"], b:"An optimistic troll sets off to rescue her friends from the gloomy Bergens.", s:"Peacock"},
-  {t:"Despicable Me", y:2010, g:["Animation","Comedy"], b:"A supervillain's plans unravel after he adopts three orphan girls.", s:"Peacock"},
-  {t:"Paddington", y:2014, g:["Animation","Comedy"], b:"A polite bear from Peru moves in with a London family, and chaos follows warmly.", s:"Check JustWatch"},
+  {t:"Finding Nemo", y:2003, g:["Animation"], b:"A clownfish crosses the ocean to rescue his son from a dentist's fish tank.", s:"Disney+", r:"G", rt:100},
+  {t:"Monsters, Inc.", y:2001, g:["Animation","Comedy"], b:"Two monster coworkers discover a little girl has followed them home.", s:"Disney+", r:"G", rt:92},
+  {t:"Wreck-It Ralph", y:2012, g:["Animation","Action & adventure"], b:"An arcade villain jumps between video games looking to become a hero.", s:"Disney+", r:"PG", rt:101},
+  {t:"Moana", y:2016, g:["Animation","Musical"], b:"A wayfinder sails beyond the reef to save her island and find a lost demigod.", s:"Disney+", r:"PG", rt:107},
+  {t:"Frozen", y:2013, g:["Animation","Musical"], b:"A princess sets out to find her sister, whose icy powers have frozen their kingdom.", s:"Disney+", r:"PG", rt:102},
+  {t:"Big Hero 6", y:2014, g:["Animation","Action & adventure"], b:"A boy and his inflatable robot chase down whoever's behind a citywide plot.", s:"Disney+", r:"PG", rt:102},
+  {t:"The Lego Batman Movie", y:2017, g:["Animation","Comedy"], b:"Gotham's most self-absorbed hero has to learn to work as part of a family.", s:"Max", r:"PG", rt:104},
+  {t:"Spirited Away", y:2001, g:["Animation","Sci-fi & fantasy"], b:"A girl works in a bathhouse for spirits to save her transformed parents.", s:"Max", r:"PG", rt:125},
+  {t:"Klaus", y:2019, g:["Animation","Comedy"], b:"A lazy postman and a reclusive toymaker accidentally start a Christmas tradition.", s:"Netflix", r:"PG", rt:96},
+  {t:"The Croods", y:2013, g:["Animation","Comedy"], b:"A prehistoric family ventures beyond their cave after their world collapses.", s:"Peacock", r:"PG", rt:98},
+  {t:"Trolls", y:2016, g:["Animation","Musical"], b:"An optimistic troll sets off to rescue her friends from the gloomy Bergens.", s:"Peacock", r:"PG", rt:92},
+  {t:"Despicable Me", y:2010, g:["Animation","Comedy"], b:"A supervillain's plans unravel after he adopts three orphan girls.", s:"Peacock", r:"PG", rt:95},
+  {t:"Paddington", y:2014, g:["Animation","Comedy"], b:"A polite bear from Peru moves in with a London family, and chaos follows warmly.", s:"Check JustWatch", r:"PG", rt:95},
 
-  {t:"The Parent Trap", y:1998, g:["Comedy"], b:"Twin sisters separated at birth swap places to reunite their divorced parents.", s:"Disney+"},
-  {t:"Freaky Friday", y:2003, g:["Comedy","Coming of age"], b:"A mother and teenage daughter magically swap bodies right before a big audition.", s:"Disney+"},
-  {t:"Night at the Museum", y:2006, g:["Comedy","Action & adventure"], b:"A night guard discovers the museum's exhibits come alive after dark.", s:"Disney+"},
-  {t:"Ghostbusters", y:1984, g:["Comedy","Sci-fi & fantasy"], b:"Three scientists start a business catching ghosts terrorizing New York City.", s:"Check JustWatch"},
-  {t:"Grown Ups", y:2010, g:["Comedy"], b:"Five childhood friends reunite for a lake house weekend with their families.", s:"Check JustWatch"},
-  {t:"Cheaper by the Dozen", y:2003, g:["Comedy"], b:"A coach and his wife juggle careers and chaos while raising twelve kids.", s:"Disney+"},
-  {t:"The Princess Diaries", y:2001, g:["Comedy","Coming of age"], b:"An awkward San Francisco teen discovers she's secretly a European princess.", s:"Disney+"},
-  {t:"Hocus Pocus", y:1993, g:["Comedy","Sci-fi & fantasy"], b:"Three resurrected witches wreak Halloween havoc on a small Massachusetts town.", s:"Disney+"},
+  {t:"The Parent Trap", y:1998, g:["Comedy"], b:"Twin sisters separated at birth swap places to reunite their divorced parents.", s:"Disney+", r:"PG", rt:128},
+  {t:"Freaky Friday", y:2003, g:["Comedy","Coming of age"], b:"A mother and teenage daughter magically swap bodies right before a big audition.", s:"Disney+", r:"PG", rt:97},
+  {t:"Night at the Museum", y:2006, g:["Comedy","Action & adventure"], b:"A night guard discovers the museum's exhibits come alive after dark.", s:"Disney+", r:"PG", rt:108},
+  {t:"Ghostbusters", y:1984, g:["Comedy","Sci-fi & fantasy"], b:"Three scientists start a business catching ghosts terrorizing New York City.", s:"Check JustWatch", r:"PG", rt:105},
+  {t:"Grown Ups", y:2010, g:["Comedy"], b:"Five childhood friends reunite for a lake house weekend with their families.", s:"Check JustWatch", r:"PG-13", rt:102},
+  {t:"Cheaper by the Dozen", y:2003, g:["Comedy"], b:"A coach and his wife juggle careers and chaos while raising twelve kids.", s:"Disney+", r:"PG", rt:98},
+  {t:"The Princess Diaries", y:2001, g:["Comedy","Coming of age"], b:"An awkward San Francisco teen discovers she's secretly a European princess.", s:"Disney+", r:"G", rt:115},
+  {t:"Hocus Pocus", y:1993, g:["Comedy","Sci-fi & fantasy"], b:"Three resurrected witches wreak Halloween havoc on a small Massachusetts town.", s:"Disney+", r:"PG", rt:96},
 
-  {t:"Indiana Jones and the Last Crusade", y:1989, g:["Action & adventure"], b:"Indiana Jones and his father race to find the Holy Grail before the Nazis.", s:"Paramount+"},
-  {t:"Jumanji: Welcome to the Jungle", y:2017, g:["Action & adventure","Comedy"], b:"Four teens are pulled into a video game and become the avatars they chose.", s:"Check JustWatch"},
-  {t:"Pirates of the Caribbean: The Curse of the Black Pearl", y:2003, g:["Action & adventure","Sci-fi & fantasy"], b:"A blacksmith teams up with a cursed pirate captain to rescue a kidnapped governor's daughter.", s:"Disney+"},
-  {t:"The Avengers", y:2012, g:["Action & adventure","Sci-fi & fantasy"], b:"Earth's mightiest heroes team up to stop a god from opening a portal for invasion.", s:"Disney+"},
-  {t:"Spider-Man: Homecoming", y:2017, g:["Action & adventure"], b:"A teenage Peter Parker balances high school life with his first real mission.", s:"Disney+"},
+  {t:"Indiana Jones and the Last Crusade", y:1989, g:["Action & adventure"], b:"Indiana Jones and his father race to find the Holy Grail before the Nazis.", s:"Paramount+", r:"PG-13", rt:127},
+  {t:"Jumanji: Welcome to the Jungle", y:2017, g:["Action & adventure","Comedy"], b:"Four teens are pulled into a video game and become the avatars they chose.", s:"Check JustWatch", r:"PG-13", rt:119},
+  {t:"Pirates of the Caribbean: The Curse of the Black Pearl", y:2003, g:["Action & adventure","Sci-fi & fantasy"], b:"A blacksmith teams up with a cursed pirate captain to rescue a kidnapped governor's daughter.", s:"Disney+", r:"PG-13", rt:143},
+  {t:"The Avengers", y:2012, g:["Action & adventure","Sci-fi & fantasy"], b:"Earth's mightiest heroes team up to stop a god from opening a portal for invasion.", s:"Disney+", r:"PG-13", rt:143},
+  {t:"Spider-Man: Homecoming", y:2017, g:["Action & adventure"], b:"A teenage Peter Parker balances high school life with his first real mission.", s:"Disney+", r:"PG-13", rt:133},
 
-  {t:"Star Wars: The Empire Strikes Back", y:1980, g:["Sci-fi & fantasy","Action & adventure"], b:"The rebellion regroups and Luke begins his Jedi training as the Empire closes in.", s:"Disney+"},
-  {t:"Harry Potter and the Chamber of Secrets", y:2002, g:["Sci-fi & fantasy","Coming of age"], b:"A mysterious force is petrifying students, and only a diary holds the answer.", s:"Peacock"},
-  {t:"A Wrinkle in Time", y:2018, g:["Sci-fi & fantasy"], b:"Three children tesseract across the universe to rescue their missing scientist father.", s:"Disney+"},
-  {t:"Ready Player One", y:2018, g:["Sci-fi & fantasy","Action & adventure"], b:"A teenager races through a virtual universe hunting an eccentric creator's hidden prize.", s:"Max"},
-  {t:"Jumanji", y:1995, g:["Sci-fi & fantasy","Action & adventure"], b:"Two kids release a man trapped for decades inside a mysterious board game.", s:"Check JustWatch"},
-  {t:"The NeverEnding Story", y:1984, g:["Sci-fi & fantasy"], b:"A grieving boy reads himself into a fantasy world that needs saving from The Nothing.", s:"Check JustWatch"},
+  {t:"Star Wars: The Empire Strikes Back", y:1980, g:["Sci-fi & fantasy","Action & adventure"], b:"The rebellion regroups and Luke begins his Jedi training as the Empire closes in.", s:"Disney+", r:"PG", rt:124},
+  {t:"Harry Potter and the Chamber of Secrets", y:2002, g:["Sci-fi & fantasy","Coming of age"], b:"A mysterious force is petrifying students, and only a diary holds the answer.", s:"Peacock", r:"PG", rt:161},
+  {t:"A Wrinkle in Time", y:2018, g:["Sci-fi & fantasy"], b:"Three children tesseract across the universe to rescue their missing scientist father.", s:"Disney+", r:"PG", rt:109},
+  {t:"Ready Player One", y:2018, g:["Sci-fi & fantasy","Action & adventure"], b:"A teenager races through a virtual universe hunting an eccentric creator's hidden prize.", s:"Max", r:"PG-13", rt:140},
+  {t:"Jumanji", y:1995, g:["Sci-fi & fantasy","Action & adventure"], b:"Two kids release a man trapped for decades inside a mysterious board game.", s:"Check JustWatch", r:"PG", rt:104},
+  {t:"The NeverEnding Story", y:1984, g:["Sci-fi & fantasy"], b:"A grieving boy reads himself into a fantasy world that needs saving from The Nothing.", s:"Check JustWatch", r:"PG", rt:102},
 
-  {t:"Bridge to Terabithia", y:2007, g:["Drama","Coming of age"], b:"Two lonely kids invent a magical kingdom in the woods behind their homes.", s:"Disney+"},
-  {t:"Little Women", y:1994, g:["Drama","Coming of age"], b:"Four sisters grow up together in Civil War-era New England.", s:"Check JustWatch"},
-  {t:"McFarland, USA", y:2015, g:["Drama"], b:"A high school coach builds a championship cross-country team in a farming town.", s:"Disney+"},
-  {t:"Soul Surfer", y:2011, g:["Drama"], b:"A teenage surfer fights to get back in the water after losing an arm to a shark.", s:"Check JustWatch"},
-  {t:"The Blind Side", y:2009, g:["Drama"], b:"A homeless teen is taken in by a family who help him become a football star.", s:"Check JustWatch"},
-  {t:"Queen of Katwe", y:2016, g:["Drama"], b:"A girl from the slums of Kampala discovers she's a chess prodigy.", s:"Disney+"},
+  {t:"Bridge to Terabithia", y:2007, g:["Drama","Coming of age"], b:"Two lonely kids invent a magical kingdom in the woods behind their homes.", s:"Disney+", r:"PG", rt:96},
+  {t:"Little Women", y:1994, g:["Drama","Coming of age"], b:"Four sisters grow up together in Civil War-era New England.", s:"Check JustWatch", r:"PG", rt:118},
+  {t:"McFarland, USA", y:2015, g:["Drama"], b:"A high school coach builds a championship cross-country team in a farming town.", s:"Disney+", r:"PG", rt:129},
+  {t:"Soul Surfer", y:2011, g:["Drama"], b:"A teenage surfer fights to get back in the water after losing an arm to a shark.", s:"Check JustWatch", r:"PG", rt:106},
+  {t:"The Blind Side", y:2009, g:["Drama"], b:"A homeless teen is taken in by a family who help him become a football star.", s:"Check JustWatch", r:"PG-13", rt:129},
+  {t:"Queen of Katwe", y:2016, g:["Drama"], b:"A girl from the slums of Kampala discovers she's a chess prodigy.", s:"Disney+", r:"PG", rt:124},
 
-  {t:"Mary Poppins", y:1964, g:["Musical","Comedy"], b:"A magical nanny brings order, and a little wonder, to two mischievous children.", s:"Disney+"},
-  {t:"The Sound of Music", y:1965, g:["Musical","Drama"], b:"A free-spirited governess brings music back to a widowed naval captain's family.", s:"Disney+"},
-  {t:"Annie", y:1982, g:["Musical"], b:"An orphan's life changes when a billionaire takes her in for the holidays.", s:"Check JustWatch"},
-  {t:"Sing 2", y:2021, g:["Musical","Animation"], b:"Buster Moon's troupe chases a shot at the biggest stage in show business.", s:"Peacock"},
+  {t:"Mary Poppins", y:1964, g:["Musical","Comedy"], b:"A magical nanny brings order, and a little wonder, to two mischievous children.", s:"Disney+", r:"G", rt:139},
+  {t:"The Sound of Music", y:1965, g:["Musical","Drama"], b:"A free-spirited governess brings music back to a widowed naval captain's family.", s:"Disney+", r:"G", rt:174},
+  {t:"Annie", y:1982, g:["Musical"], b:"An orphan's life changes when a billionaire takes her in for the holidays.", s:"Check JustWatch", r:"PG", rt:128},
+  {t:"Sing 2", y:2021, g:["Musical","Animation"], b:"Buster Moon's troupe chases a shot at the biggest stage in show business.", s:"Peacock", r:"PG", rt:110},
 
-  {t:"Clue", y:1985, g:["Mystery & thriller","Comedy"], b:"Six strangers at a dinner party must solve a murder before they become victims.", s:"Check JustWatch"},
-  {t:"Now You See Me", y:2013, g:["Mystery & thriller","Action & adventure"], b:"A team of illusionists pull off elaborate heists during their live magic shows.", s:"Check JustWatch"},
-  {t:"Enola Holmes", y:2020, g:["Mystery & thriller","Coming of age"], b:"Sherlock's teenage sister sets off on her own to find her missing mother.", s:"Netflix"},
+  {t:"Clue", y:1985, g:["Mystery & thriller","Comedy"], b:"Six strangers at a dinner party must solve a murder before they become victims.", s:"Check JustWatch", r:"PG", rt:94},
+  {t:"Now You See Me", y:2013, g:["Mystery & thriller","Action & adventure"], b:"A team of illusionists pull off elaborate heists during their live magic shows.", s:"Check JustWatch", r:"PG-13", rt:116},
+  {t:"Enola Holmes", y:2020, g:["Mystery & thriller","Coming of age"], b:"Sherlock's teenage sister sets off on her own to find her missing mother.", s:"Netflix", r:"PG-13", rt:123},
 
-  {t:"The Goonies", y:1985, g:["Coming of age","Action & adventure"], b:"A group of friends chase a pirate's treasure map to save their neighborhood.", s:"Max"},
-  {t:"The Karate Kid", y:1984, g:["Coming of age","Action & adventure"], b:"A bullied teen learns karate, and life lessons, from a quiet handyman.", s:"Check JustWatch"},
-  {t:"Diary of a Wimpy Kid", y:2010, g:["Coming of age","Comedy"], b:"A middle schooler chronicles his awkward first year of junior high in a journal.", s:"Disney+"},
-  {t:"The Outsiders", y:1983, g:["Coming of age","Drama"], b:"Two rival teen gangs clash across the tracks in 1960s Oklahoma.", s:"Check JustWatch"},
-  {t:"Now and Then", y:1995, g:["Coming of age","Drama"], b:"Four childhood best friends look back on the summer that changed everything.", s:"Check JustWatch"},
-  {t:"Big", y:1988, g:["Coming of age","Comedy"], b:"A 12-year-old wishes to be big and wakes up the next day in an adult's body.", s:"Check JustWatch"},
-  {t:"Matilda", y:1996, g:["Coming of age","Comedy"], b:"A gifted young girl with telekinetic powers stands up to a tyrannical headmistress.", s:"Check JustWatch"},
+  {t:"The Goonies", y:1985, g:["Coming of age","Action & adventure"], b:"A group of friends chase a pirate's treasure map to save their neighborhood.", s:"Max", r:"PG", rt:114},
+  {t:"The Karate Kid", y:1984, g:["Coming of age","Action & adventure"], b:"A bullied teen learns karate, and life lessons, from a quiet handyman.", s:"Check JustWatch", r:"PG", rt:126},
+  {t:"Diary of a Wimpy Kid", y:2010, g:["Coming of age","Comedy"], b:"A middle schooler chronicles his awkward first year of junior high in a journal.", s:"Disney+", r:"PG", rt:94},
+  {t:"The Outsiders", y:1983, g:["Coming of age","Drama"], b:"Two rival teen gangs clash across the tracks in 1960s Oklahoma.", s:"Check JustWatch", r:"PG", rt:91},
+  {t:"Now and Then", y:1995, g:["Coming of age","Drama"], b:"Four childhood best friends look back on the summer that changed everything.", s:"Check JustWatch", r:"PG-13", rt:100},
+  {t:"Big", y:1988, g:["Coming of age","Comedy"], b:"A 12-year-old wishes to be big and wakes up the next day in an adult's body.", s:"Check JustWatch", r:"PG", rt:104},
+  {t:"Matilda", y:1996, g:["Coming of age","Comedy"], b:"A gifted young girl with telekinetic powers stands up to a tyrannical headmistress.", s:"Check JustWatch", r:"PG", rt:98},
 ];
 
 const GENRE_ORDER = ["Animation","Comedy","Action & adventure","Sci-fi & fantasy","Drama","Musical","Mystery & thriller","Coming of age"];
+
+const RATING_ORDER = ["G","TV-G","PG","TV-PG","PG-13","TV-14","R","NC-17","TV-MA","NR"];
+const RATING_RANK = Object.fromEntries(RATING_ORDER.map((r,i)=>[r,i]));
 
 const TMDB_GENRE_MAP = {
   "action":"Action & adventure","adventure":"Action & adventure","animation":"Animation",
@@ -545,17 +653,35 @@ const TMDB_GENRE_MAP = {
 };
 
 let watchedIds = new Set();
+let hiddenIds = new Set();
 let activeGenres = new Set();
+let activeRatings = new Set();
 let groupByGenre = true;
 let customMovies = [];
 let currentUid = null;
 let unsubSnapshot = null;
 
 function movieId(m){ return m.t + "|" + m.y; }
-function allMovies(){ return MOVIES.concat(customMovies); }
+function allMovies(){ return MOVIES.concat(customMovies).filter(m => !hiddenIds.has(movieId(m))); }
 function isDuplicate(t, y){
   const tl = t.toLowerCase();
-  return allMovies().some(m => m.t.toLowerCase() === tl && m.y === y);
+  return MOVIES.concat(customMovies).some(m => m.t.toLowerCase() === tl && m.y === y);
+}
+function ratingsInUse(){
+  const set = new Set();
+  MOVIES.concat(customMovies).forEach(m => set.add(m.r || "NR"));
+  return RATING_ORDER.filter(r => set.has(r));
+}
+function formatRuntime(rt){
+  if(!rt) return "Runtime unknown";
+  const h = Math.floor(rt/60), mnt = rt%60;
+  return h > 0 ? `${h}h ${mnt}m` : `${mnt}m`;
+}
+function runtimeBucket(rt){
+  if(!rt) return null;
+  if(rt < 90) return "short";
+  if(rt <= 120) return "medium";
+  return "long";
 }
 
 /* ---------------- Firestore sync ---------------- */
@@ -568,6 +694,7 @@ function attachUserListener(uid){
     const data = snap.exists() ? snap.data() : {};
     watchedIds = new Set(Array.isArray(data.watched) ? data.watched : []);
     customMovies = Array.isArray(data.custom) ? data.custom : [];
+    hiddenIds = new Set(Array.isArray(data.hidden) ? data.hidden : []);
     render();
   });
 }
@@ -577,7 +704,8 @@ async function persist(){
   try{
     await setDoc(userDocRef(currentUid), {
       watched: [...watchedIds],
-      custom: customMovies
+      custom: customMovies,
+      hidden: [...hiddenIds]
     }, { merge: true });
   }catch(e){ /* next snapshot will just reflect last successful write */ }
 }
@@ -603,11 +731,13 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById('appScreen').style.display = 'block';
     document.getElementById('accountLabel').textContent = "Signed in as " + (user.displayName || user.email || "you");
     buildChips();
+    buildRatingChips();
     attachUserListener(user.uid);
   }else{
     currentUid = null;
     if(unsubSnapshot){ unsubSnapshot(); unsubSnapshot = null; }
     watchedIds = new Set();
+    hiddenIds = new Set();
     customMovies = [];
     document.getElementById('appScreen').style.display = 'none';
     document.getElementById('signinScreen').style.display = 'flex';
@@ -634,6 +764,15 @@ function bestStreamingName(providerData){
   return "Check JustWatch";
 }
 
+function usCertification(releaseDatesData){
+  const results = releaseDatesData && releaseDatesData.results;
+  if(!Array.isArray(results)) return "NR";
+  const us = results.find(r => r.iso_3166_1 === 'US');
+  if(!us || !Array.isArray(us.release_dates)) return "NR";
+  const hit = us.release_dates.find(d => d.certification && d.certification.trim());
+  return hit ? hit.certification.trim() : "NR";
+}
+
 async function tmdbFetch(path){
   const sep = path.includes('?') ? '&' : '?';
   const res = await fetch(`${TMDB_BASE}${path}${sep}api_key=${TMDB_KEY}`);
@@ -642,7 +781,7 @@ async function tmdbFetch(path){
 }
 
 async function movieFromTmdbId(id){
-  const details = await tmdbFetch(`/movie/${id}?append_to_response=watch/providers`);
+  const details = await tmdbFetch(`/movie/${id}?append_to_response=watch/providers,release_dates`);
   const year = details.release_date ? parseInt(details.release_date.slice(0,4), 10) : null;
   if(!year) return null;
   return {
@@ -650,7 +789,9 @@ async function movieFromTmdbId(id){
     y: year,
     g: mapGenres((details.genres || []).map(g => g.name)),
     b: (details.tagline && details.tagline.trim()) ? details.tagline.trim() : (details.overview || "").split(/(?<=[.!?])\s/)[0].slice(0,140),
-    s: bestStreamingName(details["watch/providers"])
+    s: bestStreamingName(details["watch/providers"]),
+    r: usCertification(details.release_dates),
+    rt: typeof details.runtime === 'number' && details.runtime > 0 ? details.runtime : null
   };
 }
 
@@ -745,6 +886,24 @@ function buildChips(){
   });
 }
 
+function buildRatingChips(){
+  const wrap = document.getElementById('ratingChips');
+  wrap.innerHTML = '';
+  ratingsInUse().forEach(r=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = r;
+    chip.dataset.rating = r;
+    chip.addEventListener('click', ()=>{
+      if(activeRatings.has(r)) activeRatings.delete(r);
+      else activeRatings.add(r);
+      chip.classList.toggle('active');
+      render();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
 function matchesFilters(m){
   const q = document.getElementById('search').value.trim().toLowerCase();
   if(q && !m.t.toLowerCase().includes(q)) return false;
@@ -752,6 +911,9 @@ function matchesFilters(m){
     const hit = m.g.some(g=>activeGenres.has(g));
     if(!hit) return false;
   }
+  if(activeRatings.size > 0 && !activeRatings.has(m.r || "NR")) return false;
+  const rtsel = document.getElementById('runtimeSelect').value;
+  if(rtsel !== 'all' && runtimeBucket(m.rt) !== rtsel) return false;
   const wsel = document.getElementById('watchedSelect').value;
   const isWatched = watchedIds.has(movieId(m));
   if(wsel === 'watched' && !isWatched) return false;
@@ -765,6 +927,9 @@ function sortMovies(arr){
   if(mode === 'title') copy.sort((a,b)=>a.t.localeCompare(b.t));
   else if(mode === 'year-old') copy.sort((a,b)=>a.y-b.y);
   else if(mode === 'year-new') copy.sort((a,b)=>b.y-a.y);
+  else if(mode === 'rating') copy.sort((a,b)=>(RATING_RANK[a.r||'NR']??99)-(RATING_RANK[b.r||'NR']??99));
+  else if(mode === 'runtime-short') copy.sort((a,b)=>(a.rt||99999)-(b.rt||99999));
+  else if(mode === 'runtime-long') copy.sort((a,b)=>(b.rt||-1)-(a.rt||-1));
   return copy;
 }
 
@@ -774,28 +939,103 @@ function movieRow(m, isCustom){
   const row = document.createElement('div');
   row.className = 'movie' + (isWatched ? ' watched' : '');
   row.innerHTML = `
-    <div class="stub">
+    <button class="stub" aria-label="${isWatched ? 'Mark unwatched' : 'Mark watched'}" title="${isWatched ? 'Mark unwatched' : 'Mark watched'}">
       <svg viewBox="0 0 24 24" fill="none" stroke="#17112a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-    </div>
-    <div class="body">
+    </button>
+    <div class="body" role="button" tabindex="0" aria-label="View details for ${m.t}">
       <div class="top-line"><span class="title">${m.t}</span><span class="year">${m.y}</span></div>
       <div class="blurb">${m.b || ''}</div>
       <div class="meta-row">
+        <span class="badge rating">${m.r || 'NR'}</span>
+        <span class="badge runtime">${formatRuntime(m.rt)}</span>
         <span class="badge">${m.g.join(' · ')}</span>
         <a class="badge stream" href="https://www.justwatch.com/us/search?q=${encodeURIComponent(m.t)}" target="_blank" rel="noopener">${m.s}</a>
         ${isCustom ? '<span class="badge custom">added by you</span>' : ''}
+        <button type="button" class="badge delete">Remove</button>
       </div>
     </div>
   `;
   const streamLink = row.querySelector('.badge.stream');
   streamLink.addEventListener('click', (e) => { e.stopPropagation(); });
-  row.addEventListener('click', ()=>{
+
+  const stub = row.querySelector('.stub');
+  stub.addEventListener('click', (e)=>{
+    e.stopPropagation();
     if(watchedIds.has(id)) watchedIds.delete(id);
     else watchedIds.add(id);
     persist();
+    render();
   });
+
+  const deleteBtn = row.querySelector('.badge.delete');
+  deleteBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(confirm(`Remove "${m.t}" (${m.y}) from the list?`)){
+      hiddenIds.add(id);
+      persist();
+      render();
+    }
+  });
+
+  const body = row.querySelector('.body');
+  body.addEventListener('click', ()=> openModal(m, isCustom));
+  body.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openModal(m, isCustom); }
+  });
+
   return row;
 }
+
+/* ---------------- Movie detail modal ---------------- */
+
+function openModal(m, isCustom){
+  const id = movieId(m);
+  const isWatched = watchedIds.has(id);
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div class="m-title">${m.t}</div>
+    <div class="m-sub">${m.y}${isCustom ? ' · added by you' : ''}</div>
+    <div class="m-badges">
+      <span class="badge rating">${m.r || 'NR'}</span>
+      <span class="badge runtime">${formatRuntime(m.rt)}</span>
+      <span class="badge">${m.g.join(' · ')}</span>
+      <a class="badge stream" href="https://www.justwatch.com/us/search?q=${encodeURIComponent(m.t)}" target="_blank" rel="noopener">${m.s}</a>
+    </div>
+    <p class="m-blurb">${m.b || 'No description yet.'}</p>
+    <div class="modal-actions">
+      <button type="button" class="btn-watched" id="modalWatchedBtn">${isWatched ? 'Mark as not watched' : 'Mark as watched'}</button>
+      <button type="button" class="btn-delete" id="modalDeleteBtn">Remove from list</button>
+    </div>
+  `;
+  document.getElementById('modalWatchedBtn').addEventListener('click', ()=>{
+    if(watchedIds.has(id)) watchedIds.delete(id);
+    else watchedIds.add(id);
+    persist();
+    closeModal();
+    render();
+  });
+  document.getElementById('modalDeleteBtn').addEventListener('click', ()=>{
+    if(confirm(`Remove "${m.t}" (${m.y}) from the list?`)){
+      hiddenIds.add(id);
+      persist();
+      closeModal();
+      render();
+    }
+  });
+  document.getElementById('movieModal').style.display = 'flex';
+}
+
+function closeModal(){
+  document.getElementById('movieModal').style.display = 'none';
+}
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('movieModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'movieModal') closeModal();
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') closeModal();
+});
 
 function render(){
   const list = document.getElementById('list');
@@ -836,6 +1076,7 @@ function render(){
 document.getElementById('search').addEventListener('input', render);
 document.getElementById('sortSelect').addEventListener('change', render);
 document.getElementById('watchedSelect').addEventListener('change', render);
+document.getElementById('runtimeSelect').addEventListener('change', render);
 document.getElementById('groupToggle').addEventListener('click', function(){
   groupByGenre = !groupByGenre;
   this.classList.toggle('on', groupByGenre);
